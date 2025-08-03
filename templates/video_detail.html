@@ -1,0 +1,225 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ video.title }} - Video Sharing Platform{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Video Player -->
+        <div class="card mb-4">
+            <div class="card-body p-0">
+                {% if video.video_file %}
+                    <video width="100%" height="400" controls class="w-100">
+                        <source src="{{ video.video_file.url }}" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                {% elif video.external_url %}
+                    <div class="embed-responsive embed-responsive-16by9">
+                        <iframe src="{{ video.external_url }}" allowfullscreen></iframe>
+                    </div>
+                {% else %}
+                    <div class="bg-secondary text-center py-5">
+                        <i class="fas fa-video fa-5x text-white mb-3"></i>
+                        <p class="text-white">Video not available</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Video Info -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h2>{{ video.title }}</h2>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <span class="badge bg-primary">{{ video.genre|title }}</span>
+                        <span class="badge bg-warning">{{ video.age_rating }}</span>
+                        {% if video.publisher %}
+                            <span class="badge bg-info">{{ video.publisher }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="text-muted">
+                        <i class="fas fa-eye"></i> {{ video.views }} views
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Creator:</strong> {{ video.creator.username }}<br>
+                        {% if video.producer %}
+                            <strong>Producer:</strong> {{ video.producer }}<br>
+                        {% endif %}
+                        <strong>Uploaded:</strong> {{ video.created_at|date:"M d, Y" }}
+                    </div>
+                    <div class="col-md-6">
+                        {% if video.file_size %}
+                            <strong>File Size:</strong> {{ video.get_file_size_mb }} MB<br>
+                        {% endif %}
+                        <strong>Rating:</strong> 
+                        <span class="rating-stars">
+                            {% for i in "12345" %}
+                                {% if forloop.counter <= avg_rating %}
+                                    <i class="fas fa-star"></i>
+                                {% else %}
+                                    <i class="far fa-star"></i>
+                                {% endif %}
+                            {% endfor %}
+                        </span>
+                        ({{ avg_rating }}/5)
+                    </div>
+                </div>
+                
+                {% if video.description %}
+                    <p>{{ video.description|linebreaks }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Comments Section -->
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-comments"></i> Comments ({{ comments.count }})</h5>
+            </div>
+            <div class="card-body">
+                {% if user.is_authenticated %}
+                    <form method="post" class="mb-4">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            {{ comment_form.content }}
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane"></i> Post Comment
+                        </button>
+                    </form>
+                {% else %}
+                    <div class="alert alert-info">
+                        <a href="{% url 'users:login' %}">Login</a> to post comments.
+                    </div>
+                {% endif %}
+
+                <!-- Comments List -->
+                {% for comment in comments %}
+                    <div class="border-bottom pb-3 mb-3">
+                        <div class="d-flex justify-content-between">
+                            <strong>{{ comment.user.username }}</strong>
+                            <small class="text-muted">{{ comment.created_at|timesince }} ago</small>
+                        </div>
+                        <p class="mt-2 mb-0">{{ comment.content|linebreaks }}</p>
+                    </div>
+                {% empty %}
+                    <p class="text-muted text-center">No comments yet. Be the first to comment!</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Rating Widget -->
+        {% if user.is_authenticated %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6><i class="fas fa-star"></i> Rate this Video</h6>
+                </div>
+                <div class="card-body text-center">
+                    <div id="rating-widget">
+                        {% for i in "12345" %}
+                            <i class="fas fa-star rating-star" 
+                               data-rating="{{ forloop.counter }}"
+                               style="cursor: pointer; font-size: 1.5em; color: {% if user_rating and forloop.counter <= user_rating.rating %}#ffc107{% else %}#dee2e6{% endif %};">
+                            </i>
+                        {% endfor %}
+                    </div>
+                    {% if user_rating %}
+                        <p class="mt-2 text-muted">You rated: {{ user_rating.rating }}/5</p>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Video Stats -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6><i class="fas fa-chart-bar"></i> Statistics</h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-4">
+                        <div class="border-end">
+                            <h5>{{ video.views }}</h5>
+                            <small class="text-muted">Views</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="border-end">
+                            <h5>{{ video.likes }}</h5>
+                            <small class="text-muted">Likes</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <h5>{{ video.comments.count }}</h5>
+                        <small class="text-muted">Comments</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const stars = document.querySelectorAll('.rating-star');
+    
+    stars.forEach(star => {
+        star.addEventListener('click', function() {
+            const rating = this.dataset.rating;
+            
+            fetch(`{% url 'videos:rate_video' video.id %}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: `rating=${rating}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update star display
+                    stars.forEach((s, index) => {
+                        if (index < rating) {
+                            s.style.color = '#ffc107';
+                        } else {
+                            s.style.color = '#dee2e6';
+                        }
+                    });
+                    
+                    // Update rating text
+                    const ratingText = document.querySelector('.rating-stars').parentElement;
+                    ratingText.innerHTML = `<strong>Rating:</strong> 
+                        <span class="rating-stars">
+                            ${'<i class="fas fa-star"></i>'.repeat(Math.floor(data.average_rating))}
+                            ${'<i class="far fa-star"></i>'.repeat(5 - Math.floor(data.average_rating))}
+                        </span>
+                        (${data.average_rating}/5)`;
+                }
+            });
+        });
+        
+        // Hover effect
+        star.addEventListener('mouseenter', function() {
+            const rating = parseInt(this.dataset.rating);
+            stars.forEach((s, index) => {
+                if (index < rating) {
+                    s.style.color = '#ffc107';
+                } else {
+                    s.style.color = '#dee2e6';
+                }
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

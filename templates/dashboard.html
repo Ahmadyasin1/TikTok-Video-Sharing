@@ -1,0 +1,283 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Video Sharing Platform{% endblock %}
+
+{% block extra_css %}
+<style>
+    .video-card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        border: none;
+        border-radius: 12px;
+        overflow: hidden;
+        background: linear-gradient(145deg, #ffffff, #f8f9fa);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .video-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
+    
+    .video-thumbnail {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+        background: linear-gradient(45deg, #667eea, #764ba2);
+    }
+    
+    .loading-spinner {
+        display: none;
+        text-align: center;
+        padding: 20px;
+    }
+    
+    .error-message {
+        display: none;
+        text-align: center;
+        padding: 20px;
+        color: #dc3545;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1><i class="fas fa-tachometer-alt"></i> Latest Videos</h1>
+        <p class="text-muted">{{ total_videos }} videos available</p>
+    </div>
+    <div class="col-md-4">
+        <form method="get" class="d-flex" id="searchForm">
+            {{ search_form.query }}
+            <button class="btn btn-primary ms-2" type="submit">
+                <i class="fas fa-search"></i>
+            </button>
+        </form>
+        <div class="mt-2">
+            {{ search_form.genre }}
+        </div>
+    </div>
+</div>
+
+<!-- Loading Spinner -->
+<div class="loading-spinner" id="loadingSpinner">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+    <p class="mt-2">Loading videos...</p>
+</div>
+
+<!-- Error Message -->
+<div class="error-message" id="errorMessage">
+    <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+    <p>Unable to load videos. Please try again.</p>
+    <button class="btn btn-primary" onclick="location.reload()">Retry</button>
+</div>
+
+<div class="row" id="videosContainer">
+    {% for video in videos %}
+        <div class="col-md-4 col-lg-3 mb-4">
+            <div class="card video-card h-100" data-video-id="{{ video.id }}">
+                {% if video.video_file %}
+                    <div class="video-thumbnail bg-secondary d-flex align-items-center justify-content-center position-relative">
+                        <i class="fas fa-play-circle fa-3x text-white"></i>
+                        <div class="position-absolute top-0 end-0 m-2">
+                            <span class="badge bg-dark">{{ video.get_file_size_display|default:"Video" }}</span>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="video-thumbnail bg-secondary d-flex align-items-center justify-content-center">
+                        <i class="fas fa-video fa-3x text-white"></i>
+                    </div>
+                {% endif %}
+                
+                <div class="card-body">
+                    <h6 class="card-title">{{ video.title|truncatechars:50 }}</h6>
+                    <p class="card-text small text-muted">
+                        By {{ video.creator.username }}
+                    </p>
+                    <p class="card-text small">
+                        <span class="badge bg-primary">{{ video.genre|title }}</span>
+                        <span class="badge bg-warning">{{ video.age_rating }}</span>
+                    </p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            <i class="fas fa-eye"></i> {{ video.views }}
+                            <i class="fas fa-thumbs-up ms-2"></i> {{ video.likes }}
+                        </small>
+                        <a href="{% url 'videos:video_detail' video.id %}" class="btn btn-sm btn-primary">
+                            Watch
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info text-center">
+                <i class="fas fa-info-circle"></i> No videos found. 
+                {% if user.is_authenticated and user.user_type == 'creator' %}
+                    <a href="{% url 'videos:creator_upload' %}">Upload the first video!</a>
+                {% endif %}
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if videos.has_other_pages %}
+    <nav aria-label="Video pagination">
+        <ul class="pagination justify-content-center">
+            {% if videos.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ videos.previous_page_number }}">Previous</a>
+                </li>
+            {% endif %}
+            
+            <li class="page-item active">
+                <span class="page-link">
+                    Page {{ videos.number }} of {{ videos.paginator.num_pages }}
+                </span>
+            </li>
+            
+            {% if videos.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ videos.next_page_number }}">Next</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle form submissions with error recovery
+    const searchForm = document.getElementById('searchForm');
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    const errorMessage = document.getElementById('errorMessage');
+    const videosContainer = document.getElementById('videosContainer');
+    
+    // Show loading state on form submit
+    if (searchForm) {
+        searchForm.addEventListener('submit', function(e) {
+            showLoading();
+        });
+    }
+    
+    // Handle genre filter changes
+    const genreSelect = document.querySelector('select[name="genre"]');
+    if (genreSelect) {
+        genreSelect.addEventListener('change', function() {
+            if (this.value !== '') {
+                showLoading();
+                const currentUrl = new URL(window.location);
+                currentUrl.searchParams.set('genre', this.value);
+                window.location.href = currentUrl.toString();
+            }
+        });
+    }
+    
+    // Add click handlers to video cards with error handling
+    const videoCards = document.querySelectorAll('.video-card');
+    videoCards.forEach(card => {
+        card.addEventListener('click', function(e) {
+            if (!e.target.closest('.btn')) {
+                const videoId = this.dataset.videoId;
+                if (videoId) {
+                    try {
+                        window.location.href = `/video/${videoId}/`;
+                    } catch (error) {
+                        console.error('Navigation error:', error);
+                        showError('Unable to navigate to video. Please try again.');
+                    }
+                }
+            }
+        });
+        
+        // Add hover effects
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+    
+    // Error recovery functions
+    function showLoading() {
+        videosContainer.style.display = 'none';
+        errorMessage.style.display = 'none';
+        loadingSpinner.style.display = 'block';
+    }
+    
+    function showError(message) {
+        loadingSpinner.style.display = 'none';
+        videosContainer.style.display = 'none';
+        errorMessage.style.display = 'block';
+        if (message) {
+            errorMessage.querySelector('p').textContent = message;
+        }
+    }
+    
+    function hideLoading() {
+        loadingSpinner.style.display = 'none';
+        errorMessage.style.display = 'none';
+        videosContainer.style.display = 'flex';
+    }
+    
+    // Handle network errors
+    window.addEventListener('error', function(e) {
+        console.error('Page error:', e.error);
+        showError('An error occurred. Please refresh the page.');
+    });
+    
+    // Handle unhandled promise rejections
+    window.addEventListener('unhandledrejection', function(e) {
+        console.error('Unhandled promise rejection:', e.reason);
+        showError('A network error occurred. Please check your connection.');
+    });
+    
+    // Auto-retry mechanism for failed requests
+    let retryCount = 0;
+    const maxRetries = 3;
+    
+    function autoRetry() {
+        if (retryCount < maxRetries) {
+            retryCount++;
+            console.log(`Auto-retry attempt ${retryCount}/${maxRetries}`);
+            setTimeout(() => {
+                location.reload();
+            }, 2000 * retryCount); // Exponential backoff
+        }
+    }
+    
+    // Monitor for broken pipe errors by checking if content loaded properly
+    setTimeout(() => {
+        const hasVideos = videosContainer.children.length > 0;
+        const hasEmptyMessage = videosContainer.querySelector('.alert-info');
+        
+        if (!hasVideos && !hasEmptyMessage && !errorMessage.style.display) {
+            console.warn('Content may not have loaded properly');
+            showError('Content failed to load completely.');
+        } else {
+            hideLoading();
+        }
+    }, 1000);
+    
+    // Performance monitoring
+    if ('performance' in window) {
+        window.addEventListener('load', function() {
+            const loadTime = performance.timing.loadEventEnd - performance.timing.navigationStart;
+            console.log(`Page load time: ${loadTime}ms`);
+            
+            if (loadTime > 5000) {
+                console.warn('Slow page load detected');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

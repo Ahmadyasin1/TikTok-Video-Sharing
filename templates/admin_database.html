@@ -1,0 +1,343 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Database - VideoShare{% endblock %}
+
+{% block extra_css %}
+<style>
+.admin-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+    border-radius: 15px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 15px;
+    padding: 1.5rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e3f2fd;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    margin-bottom: 1.5rem;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+.stat-number {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.stat-label {
+    color: #6c757d;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.admin-section {
+    background: white;
+    border-radius: 15px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+}
+
+.admin-section h3 {
+    color: #2c3e50;
+    border-bottom: 3px solid #3498db;
+    padding-bottom: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.recent-item {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-left: 4px solid #007bff;
+    transition: all 0.3s ease;
+}
+
+.recent-item:hover {
+    background: #e9ecef;
+    transform: translateX(5px);
+}
+
+.genre-stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.8rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    border-left: 4px solid #28a745;
+}
+
+.refresh-btn {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    z-index: 1000;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+}
+
+.admin-badge {
+    background: linear-gradient(45deg, #ff6b6b, #feca57);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 25px;
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Admin Header -->
+    <div class="admin-header text-center">
+        <div class="container">
+            <h1><i class="fas fa-database"></i> Admin Database Dashboard</h1>
+            <p class="lead">Complete overview of your VideoShare platform</p>
+            <span class="admin-badge">Admin Only Access</span>
+        </div>
+    </div>
+
+    <!-- Statistics Overview -->
+    <div class="row">
+        <div class="col-md-2">
+            <div class="stat-card text-center">
+                <div class="stat-number text-primary">{{ stats.total_users }}</div>
+                <div class="stat-label">Total Users</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stat-card text-center">
+                <div class="stat-number text-success">{{ stats.total_creators }}</div>
+                <div class="stat-label">Creators</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stat-card text-center">
+                <div class="stat-number text-info">{{ stats.total_consumers }}</div>
+                <div class="stat-label">Consumers</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stat-card text-center">
+                <div class="stat-number text-warning">{{ stats.total_videos }}</div>
+                <div class="stat-label">Total Videos</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stat-card text-center">
+                <div class="stat-number text-danger">{{ stats.total_ratings }}</div>
+                <div class="stat-label">Total Ratings</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stat-card text-center">
+                <div class="stat-number text-secondary">{{ stats.total_comments }}</div>
+                <div class="stat-label">Total Comments</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Recent Users -->
+        <div class="col-md-4">
+            <div class="admin-section">
+                <h3><i class="fas fa-users"></i> Recent Users</h3>
+                {% for user in recent_users %}
+                <div class="recent-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>{{ user.username }}</strong>
+                            <br>
+                            <small class="text-muted">{{ user.email }}</small>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-{% if user.user_type == 'creator' %}success{% else %}primary{% endif %}">
+                                {{ user.get_user_type_display }}
+                            </span>
+                            <br>
+                            <small class="text-muted">{{ user.date_joined|date:"M d, Y" }}</small>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-muted">No users yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Recent Videos -->
+        <div class="col-md-4">
+            <div class="admin-section">
+                <h3><i class="fas fa-video"></i> Recent Videos</h3>
+                {% for video in recent_videos %}
+                <div class="recent-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>{{ video.title|truncatechars:30 }}</strong>
+                            <br>
+                            <small class="text-muted">by {{ video.creator.username }}</small>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-info">{{ video.get_genre_display }}</span>
+                            <br>
+                            <small class="text-muted">{{ video.views }} views</small>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-muted">No videos yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Recent Comments -->
+        <div class="col-md-4">
+            <div class="admin-section">
+                <h3><i class="fas fa-comments"></i> Recent Comments</h3>
+                {% for comment in recent_comments %}
+                <div class="recent-item">
+                    <div>
+                        <strong>{{ comment.user.username }}</strong>
+                        <small class="text-muted">on {{ comment.video.title|truncatechars:20 }}</small>
+                    </div>
+                    <p class="mb-1">{{ comment.content|truncatechars:50 }}</p>
+                    <small class="text-muted">{{ comment.created_at|timesince }} ago</small>
+                </div>
+                {% empty %}
+                <p class="text-muted">No comments yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Genre Statistics -->
+    <div class="row">
+        <div class="col-12">
+            <div class="admin-section">
+                <h3><i class="fas fa-chart-bar"></i> Videos by Genre</h3>
+                <div class="row">
+                    {% for genre, count in videos_by_genre.items %}
+                    <div class="col-md-6 col-lg-3">
+                        <div class="genre-stat">
+                            <span>{{ genre }}</span>
+                            <span class="badge bg-success">{{ count }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Actions -->
+    <div class="row">
+        <div class="col-12">
+            <div class="admin-section">
+                <h3><i class="fas fa-tools"></i> Admin Actions</h3>
+                <div class="row">
+                    <div class="col-md-3">
+                        <a href="/admin/" class="btn btn-primary btn-lg w-100 mb-3">
+                            <i class="fas fa-cog"></i><br>
+                            Django Admin
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-info btn-lg w-100 mb-3" onclick="refreshStats()">
+                            <i class="fas fa-sync"></i><br>
+                            Refresh Stats
+                        </button>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{% url 'videos:dashboard' %}" class="btn btn-success btn-lg w-100 mb-3">
+                            <i class="fas fa-home"></i><br>
+                            Back to Site
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-warning btn-lg w-100 mb-3" onclick="exportData()">
+                            <i class="fas fa-download"></i><br>
+                            Export Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Refresh Button -->
+<button class="btn btn-primary refresh-btn" onclick="refreshStats()" title="Refresh Statistics">
+    <i class="fas fa-sync"></i>
+</button>
+
+<!-- Loading Modal -->
+<div class="modal fade" id="loadingModal" tabindex="-1">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Refreshing statistics...</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function refreshStats() {
+    // Show loading modal
+    const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+    loadingModal.show();
+    
+    // Simulate refresh (in real app, make AJAX call to refresh data)
+    setTimeout(() => {
+        loadingModal.hide();
+        location.reload();
+    }, 1500);
+}
+
+function exportData() {
+    // Placeholder for export functionality
+    alert('Export functionality would be implemented here. This could export CSV/JSON data of users, videos, etc.');
+}
+
+// Auto-refresh every 5 minutes
+setInterval(() => {
+    console.log('Auto-refreshing admin dashboard...');
+    // You could implement silent refresh here
+}, 300000);
+
+// Add real-time clock
+function updateClock() {
+    const now = new Date();
+    const timeString = now.toLocaleTimeString();
+    const dateString = now.toLocaleDateString();
+    
+    // You could add a clock widget here
+}
+
+setInterval(updateClock, 1000);
+updateClock();
+</script>
+{% endblock %}

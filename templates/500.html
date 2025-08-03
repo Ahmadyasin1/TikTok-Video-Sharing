@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Server Error - VideoShare</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --error-gradient: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            --text-dark: #2c3e50;
+            --text-light: #34495e;
+        }
+
+        body {
+            background: var(--error-gradient);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .error-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .error-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.1);
+            padding: 60px 40px;
+            text-align: center;
+            max-width: 600px;
+            width: 100%;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .error-icon {
+            font-size: 8rem;
+            background: var(--error-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 30px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .error-code {
+            font-size: 6rem;
+            font-weight: 900;
+            background: var(--error-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+            line-height: 1;
+        }
+
+        .error-title {
+            color: var(--text-dark);
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        .error-description {
+            color: var(--text-light);
+            font-size: 1.2rem;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-custom {
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: none;
+            font-size: 1.1rem;
+            min-width: 160px;
+        }
+
+        .btn-primary-custom {
+            background: var(--primary-gradient);
+            color: white;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary-custom:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+
+        .btn-outline-custom {
+            background: transparent;
+            color: var(--text-dark);
+            border: 2px solid #ff6b6b;
+        }
+
+        .btn-outline-custom:hover {
+            background: var(--error-gradient);
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(255, 107, 107, 0.3);
+        }
+
+        .suggestions {
+            margin-top: 50px;
+            padding: 30px;
+            background: rgba(255, 107, 107, 0.1);
+            border-radius: 15px;
+            border-left: 5px solid #ff6b6b;
+        }
+
+        .suggestions h5 {
+            color: var(--text-dark);
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .suggestions ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .suggestions li {
+            padding: 8px 0;
+            color: var(--text-light);
+            border-bottom: 1px solid rgba(255, 107, 107, 0.1);
+        }
+
+        .suggestions li:last-child {
+            border-bottom: none;
+        }
+
+        .suggestions li i {
+            color: #ff6b6b;
+            margin-right: 10px;
+            width: 20px;
+        }
+
+        .footer-info {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 1px solid rgba(255, 107, 107, 0.2);
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .error-card {
+                padding: 40px 20px;
+                margin: 10px;
+            }
+            
+            .error-code {
+                font-size: 4rem;
+            }
+            
+            .error-title {
+                font-size: 2rem;
+            }
+            
+            .error-description {
+                font-size: 1rem;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn-custom {
+                width: 100%;
+                max-width: 250px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <div class="error-card">
+            <div class="error-icon">
+                <i class="fas fa-tools"></i>
+            </div>
+            
+            <div class="error-code">500</div>
+            
+            <h1 class="error-title">Server Error</h1>
+            
+            <p class="error-description">
+                We're experiencing some technical difficulties on our end. 
+                Our team has been notified and is working to resolve this issue.
+            </p>
+            
+            <div class="action-buttons">
+                <a href="/" class="btn-custom btn-primary-custom">
+                    <i class="fas fa-home me-2"></i>Go Home
+                </a>
+                <a href="javascript:location.reload()" class="btn-custom btn-outline-custom">
+                    <i class="fas fa-redo me-2"></i>Try Again
+                </a>
+            </div>
+            
+            <div class="suggestions">
+                <h5><i class="fas fa-info-circle me-2"></i>What you can do:</h5>
+                <ul>
+                    <li><i class="fas fa-refresh"></i>Wait a few minutes and try again</li>
+                    <li><i class="fas fa-home"></i>Return to our homepage</li>
+                    <li><i class="fas fa-envelope"></i>Contact support if the problem persists</li>
+                    <li><i class="fas fa-clock"></i>Check our status page for updates</li>
+                </ul>
+            </div>
+            
+            <div class="footer-info">
+                <p><strong>VideoShare Platform</strong> | Professional Video Sharing Experience</p>
+                <p>Error ID: {{ request_id|default:"VS-500-ERROR" }} | Time: <span id="error-time"></span></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Display current time
+        document.getElementById('error-time').textContent = new Date().toLocaleString();
+        
+        // Auto-refresh after 30 seconds
+        setTimeout(function() {
+            const refreshBtn = document.querySelector('.btn-outline-custom');
+            refreshBtn.innerHTML = '<i class="fas fa-redo me-2"></i>Auto Refreshing...';
+            refreshBtn.style.opacity = '0.7';
+            setTimeout(() => location.reload(), 2000);
+        }, 30000);
+    </script>
+</body>
+</html>
