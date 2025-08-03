@@ -1,0 +1,4 @@
+WARNING 2025-08-03 11:33:50,244 log 14616 10352 Not Found: /favicon.ico
+WARNING 2025-08-03 11:33:50,246 basehttp 14616 10352 "GET /favicon.ico HTTP/1.1" 404 4745
+WARNING 2025-08-03 11:34:46,149 log 3144 5700 Not Found: /users/database
+WARNING 2025-08-03 11:34:46,150 basehttp 3144 5700 "GET /users/database HTTP/1.1" 404 6299
